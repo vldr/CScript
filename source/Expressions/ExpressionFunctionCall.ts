@@ -55,6 +55,10 @@ export default class ExpressionFunctionCall extends Expression
         {
             return this.generateTickIntrinsic(node);
         }
+        else if (functionName === "_println")
+        {
+            return this.generatePrintIntrinsic(node, true);
+        }
         else if (functionName === "_print")
         {
             return this.generatePrintIntrinsic(node);
@@ -131,13 +135,8 @@ export default class ExpressionFunctionCall extends Expression
         return expressionResult;
     }
 
-    private generatePrintIntrinsic(node: NodeFunctionCall): ExpressionResult
+    private generatePrintIntrinsic(node: NodeFunctionCall, newline = false): ExpressionResult
     {
-        if (node.parameters.length <= 0)
-        {
-            throw ExternalErrors.PARAMETER_MISSING(node, node.function_name, 0, node.parameters.length);
-        }
-
         const returnType = new TypeVoid(new QualifierNone(), 0);
         const expressionResult = new ExpressionResult(returnType, this);
 
@@ -170,6 +169,11 @@ export default class ExpressionFunctionCall extends Expression
                     throw ExternalErrors.UNSUPPORTED_TYPE_FOR_PRINT(node, targetExpressionResult.type.toString());
                 }
             }
+        }
+
+        if (newline)
+        {
+            expressionResult.pushInstruction(new InstructionPRINT("\n"));
         }
 
         return expressionResult;

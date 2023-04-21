@@ -34,11 +34,14 @@ class Main
                 void run()
                 {
                     for (uint i = 0u; i < 15u; i++)
-                        _print("Catalan number[", i, "] = ", catalan(i), "\n");
+                        _println("Catalan number[", i, "] = ", catalan(i));
                 }
                 
                 run();
+
+                _print("hello");
             `);
+
             
             const interpreter = new Interpreter();
             await interpreter.run(result);
