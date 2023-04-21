@@ -46,7 +46,6 @@ import TypeVoid from "../Types/TypeVoid";
 import InstructionVPUSH from "../Instructions/InstructionVPUSH";
 import InstructionQSTORE from "../Instructions/InstructionQSTORE";
 import SymbolStructMember from "../Symbols/SymbolStructMember";
-import SymbolAccessor from "../Symbols/SymbolAccessor";
 import ExpressionResultConstant from "./ExpressionResultConstant";
 import Utils from "../Utils";
 import InstructionQADD from "../Instructions/InstructionQADD";

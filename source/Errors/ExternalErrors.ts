@@ -211,4 +211,14 @@ export default abstract class ExternalErrors
     {
         return this.generateError("C0039", `The size of an array must be an integer or unsigned integer.`, node);
     }
+
+    static UNSUPPORTED_TYPE_FOR_PRINT(node: Node, typeName: string)
+    {
+        return this.generateError("C0040", `The print intrinsic cannot print the value of type '${typeName}'.`, node);
+    }
+
+    static EXPECTS_VARIABLE_FOR_PRINT(node: Node)
+    {
+        return this.generateError("C0040", `The print intrinsic expects a variable-type as a parameter.`, node);
+    }
 }

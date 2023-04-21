@@ -631,6 +631,7 @@ export default class Interpreter
                 else if (
                     instruction.operand === "TICK" ||
                     instruction.operand === "RAND" ||
+                    instruction.operand === "PRINT" ||
                     instruction.operand === "GETAVB" ||
                     instruction.operand === "SETLED"
                 )
@@ -1105,6 +1106,29 @@ export default class Interpreter
 
             this._registerA = valueA;
             this._registerB = valueB;
+        }
+        else if (instruction.operand == "PRINT")
+        {
+            const data: string[] = [];
+
+            for (let [key, value] of this._memoryRegions) 
+            {
+                if (key == instruction.arg0)
+                {
+                    data.push(value.toString());
+                }
+                else if (instruction.arg0 && key.startsWith(instruction.arg0))
+                {
+                    const index = parseInt(key.replace(instruction.arg0, ""));
+
+                    if (!Number.isNaN(index))
+                    {
+                        data.push(value.toString());
+                    }
+                }    
+            }
+
+            console.log(instruction.arg1, "=", data.toString());
         }
         else if (instruction.operand === "SETLED" || instruction.operand === "TICK") {}
         else

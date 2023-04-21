@@ -26,8 +26,11 @@ import InstructionPOPNOP from "../Instructions/InstructionPOPNOP";
 import InstructionRAND from "../Instructions/InstructionRAND";
 import InstructionTICK from "../Instructions/InstructionTICK";
 import InstructionSETLED from "../Instructions/InstructionSETLED";
-import SymbolStruct from "../Symbols/SymbolStruct";
 import SymbolFunction from "../Symbols/SymbolFunction";
+import ExpressionIdentifier from "./ExpressionIdentifier";
+import ExpressionResultVariable from "./ExpressionResultVariable";
+import InstructionPRINT from "../Instructions/InstructionPRINT";
+import ExpressionResultAccessor from "./ExpressionResultAccessor";
 
 export default class ExpressionFunctionCall extends Expression
 {
@@ -61,6 +64,10 @@ export default class ExpressionFunctionCall extends Expression
         else if (functionName === "_tick")
         {
             return this.generateTickIntrinsic(node);
+        }
+        else if (functionName === "_print")
+        {
+            return this.generatePrintIntrinsic(node);
         }
 
         const fn = this._scope.getFunctionByName(functionName);
@@ -202,6 +209,53 @@ export default class ExpressionFunctionCall extends Expression
         else
         {
             throw ExternalErrors.UNSUPPORTED_TYPE_FOR_LOAD(node, targetExpressionResult.type.toString());
+        }
+
+        return expressionResult;
+    }
+
+    private generatePrintIntrinsic(node: NodeFunctionCall): ExpressionResult
+    {
+        const functionName = node.function_name;
+        const nodeParameters = node.parameters;
+        const expectedParameters = 1;
+
+        if (nodeParameters.length !== expectedParameters)
+        {
+            throw ExternalErrors.PARAMETER_MISSING(node, functionName, expectedParameters, nodeParameters.length);
+        }
+
+        const returnType = new TypeVoid(new QualifierNone(), 0);
+
+        const targetExpressionResult = this._compiler.generateExpression(
+            new DestinationStack(returnType), this._scope, nodeParameters[0]
+        );
+
+        if (!(targetExpressionResult instanceof ExpressionResultVariable))
+        {
+            throw ExternalErrors.EXPECTS_VARIABLE_FOR_PRINT(node);
+        }
+
+        const expressionResult = new ExpressionResult(returnType, this);
+
+        if (
+            targetExpressionResult.type instanceof TypeInteger ||
+            targetExpressionResult.type instanceof TypeUnsignedInteger ||
+            targetExpressionResult.type instanceof TypeFloat  
+        )
+        {
+            const variableExpression = targetExpressionResult as ExpressionResultVariable;
+
+            expressionResult.pushInstruction(
+                new InstructionPRINT(
+                    variableExpression.variable.labelName + (targetExpressionResult.type.arraySize > 0 ? "_" : ""), 
+                    variableExpression.variable.name
+                )
+            );
+        }
+        else
+        {
+            throw ExternalErrors.UNSUPPORTED_TYPE_FOR_PRINT(node, targetExpressionResult.type.toString());
         }
 
         return expressionResult;
