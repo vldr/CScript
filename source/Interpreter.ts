@@ -332,6 +332,19 @@ export default class Interpreter
         this._stack.push(value.slice(0));
     }
 
+    private moveValue(instruction: InterpreterInstruction, from: number, to: number)
+    {
+        const element = this._stack[from];
+        const removedElements = this._stack.splice(from, 1);
+
+        if (!element || removedElements.length <= 0)
+        {
+            throw instruction.error(InterpreterLocation.Operand, "Stack was immovable.");
+        }
+
+        this.pushValue(instruction, element);
+    }
+
     private pushValue(instruction: InterpreterInstruction, value: ArrayBuffer)
     {
         this._stack.push(value.slice(0));
@@ -343,7 +356,7 @@ export default class Interpreter
 
         if (!value)
         {
-            throw instruction.error(InterpreterLocation.Operand, "Stack was empty.")
+            throw instruction.error(InterpreterLocation.Operand, "Stack was empty.");
         }
 
         return value.slice(0);
@@ -384,6 +397,9 @@ export default class Interpreter
                 instruction.operand === "PUSH" ||
                 instruction.operand === "VPUSH" ||
                 instruction.operand === "SAVEPUSH" ||
+                instruction.operand === "SAVEPUSHA" ||
+                instruction.operand === "SAVEPUSHB" ||
+                instruction.operand === "SAVEFRONT" ||
                 instruction.operand === "MOVOUTPUSH" ||
                 instruction.operand === "POP" ||
                 instruction.operand === "GETPOPA" ||
@@ -484,9 +500,7 @@ export default class Interpreter
 
     private processInstructions()
     {
-        let isRunning = true;
-
-        while (isRunning)
+        for (;;)
         {
             const instruction = new InterpreterInstruction(this._instructions[this._programCounter], this._programCounter);
 
@@ -497,7 +511,7 @@ export default class Interpreter
             {
                 if (instruction.operand === "HALT")
                 {
-                    isRunning = false;
+                    break;
                 }
                 else if (
                     instruction.operand === "GETA" ||
@@ -512,6 +526,9 @@ export default class Interpreter
                     instruction.operand === "PUSH" ||
                     instruction.operand === "VPUSH" ||
                     instruction.operand === "SAVEPUSH" ||
+                    instruction.operand === "SAVEPUSHA" ||
+                    instruction.operand === "SAVEPUSHB" ||
+                    instruction.operand === "SAVEFRONT" ||
                     instruction.operand === "MOVOUTPUSH" ||
                     instruction.operand === "STOREPUSH"
                 )
@@ -688,6 +705,9 @@ export default class Interpreter
     // Implement InstructionVPUSH.ts
     // Implement InstructionSAVEPUSH.ts
     // Implement InstructionSTOREPUSH.ts
+    // Implement InstructionSTOREPUSHA.ts
+    // Implement InstructionSTOREPUSHB.ts
+    // Implement InstructionSTOREFRONT.ts
     // Implement InstructionMOVOUTPUSH.ts
     private interpretPUSH(instruction: InterpreterInstruction)
     {
@@ -702,6 +722,18 @@ export default class Interpreter
         else if (instruction.operand === "SAVEPUSH")
         {
             this.pushValue(instruction, this._registerR);
+        }
+        else if (instruction.operand === "SAVEPUSHA")
+        {
+            this.pushValue(instruction, this._registerA);
+        }
+        else if (instruction.operand === "SAVEPUSHB")
+        {
+            this.pushValue(instruction, this._registerB);
+        }
+        else if (instruction.operand === "SAVEFRONT")
+        {
+            this.moveValue(instruction, this._stack.length - 1 - Number(instruction.arg0), this._stack.length - 1);
         }
         else if (instruction.operand === "MOVOUTPUSH")
         {

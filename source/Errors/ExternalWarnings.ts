@@ -18,4 +18,8 @@ export default abstract class ExternalWarnings
         return this.generateWarning("C0001W",`Not all code paths return a value.`, node, compiler);
     }
 
+    static STRUCT_OR_ARRAY_WONT_RECURSE(node: Node, compiler: Compiler, name: string)
+    {
+        return this.generateWarning("C0002W", `The variable '${name}' will act as a static global variable between recursive calls.`, node, compiler);
+    }
 }

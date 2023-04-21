@@ -51,6 +51,27 @@ export default class Scope
         this._functions.push(fn);
     }
 
+    getVariablesInFunction(): Variable[]
+    {
+        let variables = [];
+        let scope: Scope | undefined = this;
+
+        while (scope)
+        {
+            for (const variable of scope._variables)
+            {
+                if (scope.name)
+                {
+                    variables.push(variable);
+                }
+            }
+
+            scope = scope._scope;
+        }
+
+        return variables;
+    }
+
     getVariableByNameInScope(name: string): Variable | undefined
     {
         return this._variables.find(s => s.name === name);

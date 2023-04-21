@@ -26,9 +26,13 @@ import InstructionPOPNOP from "../Instructions/InstructionPOPNOP";
 import InstructionRAND from "../Instructions/InstructionRAND";
 import InstructionTICK from "../Instructions/InstructionTICK";
 import SymbolFunction from "../Symbols/SymbolFunction";
-import ExpressionResultVariable from "./ExpressionResultVariable";
 import InstructionPRINT from "../Instructions/InstructionPRINT";
 import NodeString from "../Nodes/NodeString";
+import InstructionPUSH from "../Instructions/InstructionPUSH";
+import InstructionSAVEPUSHA from "../Instructions/InstructionSAVEPUSHA";
+import InstructionSAVEPUSHB from "../Instructions/InstructionSAVEPUSHB";
+import InstructionSAVEFRONT from "../Instructions/InstructionSAVEFRONT";
+import ExternalWarnings from "../Errors/ExternalWarnings";
 
 export default class ExpressionFunctionCall extends Expression
 {
@@ -86,6 +90,29 @@ export default class ExpressionFunctionCall extends Expression
         }
 
         const expressionResult = new ExpressionResult(fnReturnType, this);
+        const scopeVariables = this._scope.getVariablesInFunction();
+
+        expressionResult.pushInstruction(new InstructionSAVEPUSHA());
+        expressionResult.pushInstruction(new InstructionSAVEPUSHB());
+
+        scopeVariables.forEach((variable) => 
+        {
+            if (
+                (
+                    variable.type instanceof TypeInteger ||
+                    variable.type instanceof TypeUnsignedInteger ||
+                    variable.type instanceof TypeFloat
+                )
+                && variable.type.arraySize <= 0
+            )
+            {
+                expressionResult.pushInstruction(new InstructionPUSH(variable));
+            }
+            else if (this._scope.getFunction()?.name === functionName)
+            {
+                ExternalWarnings.STRUCT_OR_ARRAY_WONT_RECURSE(node, this._compiler, variable.name);
+            }
+        })
 
         fnParameters.forEach((parameter, index) =>
         {
@@ -104,6 +131,30 @@ export default class ExpressionFunctionCall extends Expression
         ////////////////////////////////////////////////////////////
 
         expressionResult.pushInstruction(new InstructionCALL(fn));
+
+        const isVoidType = !(fnReturnType instanceof TypeVoid);
+            
+        scopeVariables.reverse().forEach((variable) => 
+        {
+            if (
+                (
+                    variable.type instanceof TypeInteger ||
+                    variable.type instanceof TypeUnsignedInteger ||
+                    variable.type instanceof TypeFloat
+                )
+                && variable.type.arraySize <= 0
+            )
+            {
+                if (isVoidType) { expressionResult.pushInstruction(new InstructionSAVEFRONT(1)); }
+                expressionResult.pushInstruction(new InstructionPOP(variable));
+            }
+        });
+        
+        if (isVoidType) { expressionResult.pushInstruction(new InstructionSAVEFRONT(1)); }
+        expressionResult.pushInstruction(new InstructionGETPOPB());
+
+        if (isVoidType) { expressionResult.pushInstruction(new InstructionSAVEFRONT(1)); }
+        expressionResult.pushInstruction(new InstructionGETPOPA());
 
         if (destination instanceof DestinationVariable)
         {
