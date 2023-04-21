@@ -25,12 +25,10 @@ import InstructionCALL from "../Instructions/InstructionCALL";
 import InstructionPOPNOP from "../Instructions/InstructionPOPNOP";
 import InstructionRAND from "../Instructions/InstructionRAND";
 import InstructionTICK from "../Instructions/InstructionTICK";
-import InstructionSETLED from "../Instructions/InstructionSETLED";
 import SymbolFunction from "../Symbols/SymbolFunction";
-import ExpressionIdentifier from "./ExpressionIdentifier";
 import ExpressionResultVariable from "./ExpressionResultVariable";
 import InstructionPRINT from "../Instructions/InstructionPRINT";
-import ExpressionResultAccessor from "./ExpressionResultAccessor";
+import NodeString from "../Nodes/NodeString";
 
 export default class ExpressionFunctionCall extends Expression
 {
@@ -48,14 +46,6 @@ export default class ExpressionFunctionCall extends Expression
         else if (functionName === "_pop_uint" || functionName === "_pop_int" || functionName === "_pop_float")
         {
             return this.generatePopIntrinsic(node);
-        }
-        else if (functionName === "_load_a" || functionName === "_load_b")
-        {
-            return this.generateLoadIntrinsic(node);
-        }
-        else if (functionName === "_setled")
-        {
-            return this.generateSetLedIntrinsic(node);
         }
         else if (functionName === "_urand")
         {
@@ -141,121 +131,45 @@ export default class ExpressionFunctionCall extends Expression
         return expressionResult;
     }
 
-    private generateLoadIntrinsic(node: NodeFunctionCall): ExpressionResult
-    {
-        const functionName = node.function_name;
-        const nodeParameters = node.parameters;
-        const expectedParameters = 1;
-
-        if (nodeParameters.length !== expectedParameters)
-        {
-            throw ExternalErrors.PARAMETER_MISSING(node, functionName, expectedParameters, nodeParameters.length);
-        }
-
-        const returnType = new TypeVoid(new QualifierNone(), 0);
-
-        let destination = functionName.endsWith("_a") ?
-            new DestinationRegisterA(returnType) : new DestinationRegisterB(returnType);
-
-        const targetExpressionResult = this._compiler.generateExpression(
-            destination, this._scope, nodeParameters[0]
-        );
-
-        const expressionResult = new ExpressionResult(returnType, this);
-
-        if ((targetExpressionResult.type instanceof TypeInteger ||
-            targetExpressionResult.type instanceof TypeUnsignedInteger ||
-            targetExpressionResult.type instanceof TypeFloat)
-            && targetExpressionResult.type.arraySize <= 0
-        )
-        {
-            expressionResult.pushExpressionResult(targetExpressionResult);
-        }
-        else
-        {
-            throw ExternalErrors.UNSUPPORTED_TYPE_FOR_LOAD(node, targetExpressionResult.type.toString());
-        }
-
-        return expressionResult;
-    }
-
-    private generateSetLedIntrinsic(node: NodeFunctionCall): ExpressionResult
-    {
-        const functionName = node.function_name;
-        const nodeParameters = node.parameters;
-        const expectedParameters = 1;
-
-        if (nodeParameters.length !== expectedParameters)
-        {
-            throw ExternalErrors.PARAMETER_MISSING(node, functionName, expectedParameters, nodeParameters.length);
-        }
-
-        const returnType = new TypeVoid(new QualifierNone(), 0);
-
-        const targetExpressionResult = this._compiler.generateExpression(
-            new DestinationRegisterA(returnType), this._scope, nodeParameters[0]
-        );
-        const expressionResult = new ExpressionResult(returnType, this);
-
-        if ((targetExpressionResult.type instanceof TypeInteger ||
-            targetExpressionResult.type instanceof TypeUnsignedInteger ||
-            targetExpressionResult.type instanceof TypeFloat)
-            && targetExpressionResult.type.arraySize <= 0
-        )
-        {
-            expressionResult.pushExpressionResult(targetExpressionResult);
-            expressionResult.pushInstruction(new InstructionSETLED());
-        }
-        else
-        {
-            throw ExternalErrors.UNSUPPORTED_TYPE_FOR_LOAD(node, targetExpressionResult.type.toString());
-        }
-
-        return expressionResult;
-    }
-
     private generatePrintIntrinsic(node: NodeFunctionCall): ExpressionResult
     {
-        const functionName = node.function_name;
-        const nodeParameters = node.parameters;
-        const expectedParameters = 1;
-
-        if (nodeParameters.length !== expectedParameters)
+        if (node.parameters.length <= 0)
         {
-            throw ExternalErrors.PARAMETER_MISSING(node, functionName, expectedParameters, nodeParameters.length);
+            throw ExternalErrors.PARAMETER_MISSING(node, node.function_name, 0, node.parameters.length);
         }
 
         const returnType = new TypeVoid(new QualifierNone(), 0);
-
-        const targetExpressionResult = this._compiler.generateExpression(
-            new DestinationStack(returnType), this._scope, nodeParameters[0]
-        );
-
-        if (!(targetExpressionResult instanceof ExpressionResultVariable))
-        {
-            throw ExternalErrors.EXPECTS_VARIABLE_FOR_PRINT(node);
-        }
-
         const expressionResult = new ExpressionResult(returnType, this);
 
-        if (
-            targetExpressionResult.type instanceof TypeInteger ||
-            targetExpressionResult.type instanceof TypeUnsignedInteger ||
-            targetExpressionResult.type instanceof TypeFloat  
-        )
+        for (let nodeParameter of node.parameters)
         {
-            const variableExpression = targetExpressionResult as ExpressionResultVariable;
-
-            expressionResult.pushInstruction(
-                new InstructionPRINT(
-                    variableExpression.variable.labelName + (targetExpressionResult.type.arraySize > 0 ? "_" : ""), 
-                    variableExpression.variable.name
+            if (nodeParameter.type === "string")
+            {
+                expressionResult.pushInstruction(new InstructionPRINT((nodeParameter as NodeString).value));
+            }
+            else
+            {
+                const targetExpressionResult = this._compiler.generateExpression(
+                    new DestinationStack(returnType), this._scope, nodeParameter
+                );  
+        
+                if (
+                    (
+                        targetExpressionResult.type instanceof TypeInteger ||
+                        targetExpressionResult.type instanceof TypeUnsignedInteger ||
+                        targetExpressionResult.type instanceof TypeFloat
+                    )
+                    && targetExpressionResult.type.arraySize <= 0
                 )
-            );
-        }
-        else
-        {
-            throw ExternalErrors.UNSUPPORTED_TYPE_FOR_PRINT(node, targetExpressionResult.type.toString());
+                {
+                    expressionResult.pushExpressionResult(targetExpressionResult);
+                    expressionResult.pushInstruction(new InstructionPRINT(undefined));
+                }
+                else
+                {
+                    throw ExternalErrors.UNSUPPORTED_TYPE_FOR_PRINT(node, targetExpressionResult.type.toString());
+                }
+            }
         }
 
         return expressionResult;
@@ -280,9 +194,11 @@ export default class ExpressionFunctionCall extends Expression
 
         const expressionResult = new ExpressionResult(returnType, this);
 
-        if ((targetExpressionResult.type instanceof TypeInteger ||
-            targetExpressionResult.type instanceof TypeUnsignedInteger ||
-            targetExpressionResult.type instanceof TypeFloat)
+        if ((
+                targetExpressionResult.type instanceof TypeInteger ||
+                targetExpressionResult.type instanceof TypeUnsignedInteger ||
+                targetExpressionResult.type instanceof TypeFloat
+            )
             && targetExpressionResult.type.arraySize <= 0
         )
         {

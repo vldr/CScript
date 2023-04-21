@@ -6,6 +6,8 @@ export default class Interpreter
     private _stack = new Array<ArrayBuffer>();
     private _callStack = new Array<number>();
     private _programCounter: number;
+    private _ticks: number;
+    private _output = (data: string) => process.stdout.write(data);
 
     private _labels = new Map<string, InterpreterLabel>();
     private _memoryRegions = new Map<string, ArrayBuffer>();
@@ -14,30 +16,28 @@ export default class Interpreter
     private _didModifyProgramCounter: boolean;
     private _exports: InterpreterWasmExport;
 
-    constructor(public readonly content: string)
-    {
-        this._instructions = content
-            .split("\n")
-            .map((line) => line.replace("\n", "").trim());
-    }
-
     get registerA() { return this._registerA.slice(0); }
     get registerB() { return this._registerB.slice(0); }
     get registerR() { return this._registerR.slice(0); }
     get stack() { return this._stack; }
     get memoryRegions() { return this._memoryRegions; }
 
-    public async run()
+    public async run(content: string)
     {
-        await this.runWithoutStackCheck();
+        await this.runWithoutStackCheck(content);
 
         if (this.stack.length !== 0)
             throw Error("stack is not empty.");
     }
 
-    public async runWithoutStackCheck()
+    public async runWithoutStackCheck(content: string)
     {
+        this._instructions = content
+            .split("\n")
+            .map((line) => line.replace("\n", "").trim());
+
         this._programCounter = 0;
+        this._ticks = 0;
 
         await this.initExports();
 
@@ -459,7 +459,7 @@ export default class Interpreter
                 instruction.operand === "QSTORE" ||
                 instruction.operand === "TICK" ||
                 instruction.operand === "RAND" ||
-                instruction.operand === "SETLED" ||
+                instruction.operand === "PRINT" ||
                 instruction.operand === ".data"
             )
             {
@@ -491,6 +491,7 @@ export default class Interpreter
             const instruction = new InterpreterInstruction(this._instructions[this._programCounter], this._programCounter);
 
             this._didModifyProgramCounter = false;
+            this._ticks++;
 
             if (instruction.operand)
             {
@@ -632,8 +633,7 @@ export default class Interpreter
                     instruction.operand === "TICK" ||
                     instruction.operand === "RAND" ||
                     instruction.operand === "PRINT" ||
-                    instruction.operand === "GETAVB" ||
-                    instruction.operand === "SETLED"
+                    instruction.operand === "GETAVB" 
                 )
                 {
                     this.interpretSPECIAL(instruction);
@@ -1086,12 +1086,15 @@ export default class Interpreter
     }
 
     // Implement InstructionRAND.ts
-    // Implement InstructionSETLED.ts
     // Implement InstructionTICK.ts
     // Implement InstructionGETAVB.ts
     private interpretSPECIAL(instruction: InterpreterInstruction)
     {
-        if (instruction.operand === "RAND")
+        if (instruction.operand === "TICK") 
+        {
+            this._registerR = new Uint32Array([ this._ticks ]);
+        }
+        else if (instruction.operand === "RAND")
         {
             const getRandomNumber = (min: number, max: number) => {
                 return Math.random() * (max - min) + min;
@@ -1109,28 +1112,19 @@ export default class Interpreter
         }
         else if (instruction.operand == "PRINT")
         {
-            const data: string[] = [];
-
-            for (let [key, value] of this._memoryRegions) 
+            let output = new String();
+            
+            if (instruction.arg0)
             {
-                if (key == instruction.arg0)
-                {
-                    data.push(value.toString());
-                }
-                else if (instruction.arg0 && key.startsWith(instruction.arg0))
-                {
-                    const index = parseInt(key.replace(instruction.arg0, ""));
-
-                    if (!Number.isNaN(index))
-                    {
-                        data.push(value.toString());
-                    }
-                }    
+                output += decodeURI(instruction.arg0);
+            }
+            else
+            {
+                output += this.popValue(instruction).toString();
             }
 
-            console.log(instruction.arg1, "=", data.toString());
+            this._output(output.toString());
         }
-        else if (instruction.operand === "SETLED" || instruction.operand === "TICK") {}
         else
         {
             instruction.error(InterpreterLocation.Operand, "Unknown operand for SPECIAL-like instruction.");

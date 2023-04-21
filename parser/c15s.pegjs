@@ -814,11 +814,44 @@ paren_expression
       return expression;
     }
 
+string_constant
+  = '"' chars:double_string_character* '"' {
+      return new node({ location: location(), 
+        type: "string",
+        value: chars.join("")
+      });
+    }
+    
+double_string_character
+  = !('"' / "\\") string_character { return text(); }
+  / "\\" sequence:escape_sequence { return sequence; }
+  
+string_character
+  = .
+  
+escape_sequence
+  = escape_character
+  / non_escape_character
+
+escape_character
+  = '"'
+  / "\\"
+  / "b"  { return "\b"; }
+  / "f"  { return "\f"; }
+  / "n"  { return "\n"; }
+  / "r"  { return "\r"; }
+  / "t"  { return "\t"; }
+  / "v"  { return "\v"; }
+
+non_escape_character
+  = !(escape_character) string_character { return text(); }
+
 primary_expression
   = function_call
   / identifier
   / float_constant
   / int_constant
+  / string_constant
   / paren_expression
   / type_cast
   

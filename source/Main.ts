@@ -9,43 +9,43 @@ class Main
         {
             const compiler = new Compiler();
             const result = compiler.compile(`
-                int arr[] = {
-                    55, 47, 35, 15, 20, 42,
-                    52, 30, 58, 15, 13, 19,
-                    32, 18, 44, 11, 7, 9,
-                    34, 56, 17, 25, 14, 48,
-                    40, 4, 5, 7, 36, 1,
-                    33, 49, 25, 26, 30, 9
-                };
-                
-                struct Test {
-                    int arr_ay[arr.length];
-                    int arr[arr.length];
-                };
-                
-                Test test;
-
-                void copy(int a)
+                uint binomialCoeff(uint n, uint k)
                 {
-                    for (int i = 0; i < arr.length; i++)
-                    {
-                        _print(i);
-
-                        test.arr_ay[i] = arr[i];
+                    uint res = 1u;
+                
+                    if (k > n - k)
+                        k = n - k;
+                
+                    for (uint i = 0u; i < k; ++i) {
+                        res *= (n - i);
+                        res /= (i + 1u);
                     }
+                
+                    return res;
                 }
-
-                copy(12);
-
-                _print(test.arr_ay);
+                
+                uint catalan(uint n)
+                {
+                    uint c = binomialCoeff(2u * n, n);
+                
+                    return c / (n + 1u);
+                }
+                
+                void run()
+                {
+                    for (uint i = 0u; i < 15u; i++)
+                        _print("Catalan number[", i, "] = ", catalan(i), "\n");
+                }
+                
+                run();
             `);
-
-            const interpreter = new Interpreter(result);
-            await interpreter.run();
+            
+            const interpreter = new Interpreter();
+            await interpreter.run(result);
         }
         catch (exception)
         {
-            console.log("Exception", exception);
+            console.log(exception);
         }
     }
 }
