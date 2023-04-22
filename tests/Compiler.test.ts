@@ -1,7 +1,7 @@
 import Interpreter from "../source/Interpreter";
 import Compiler from "../source/Compiler";
 
-test("Test 'fib.c'.", async () => {
+test("Test 'iterative_fib.c'.", async () => {
     const compiler = new Compiler();
     const result = compiler.compile(
         `/* Iterative fibonacci */
@@ -22,6 +22,26 @@ test("Test 'fib.c'.", async () => {
         // The memory region 'var_result' should contain 2584 afterwards.
         int result = fibonacci(18);`
     );
+
+    const interpreter = new Interpreter();
+    await interpreter.run(result);
+
+    expect(interpreter.memoryRegions.get("var_result")).toStrictEqual(new Int32Array([ 2584 ]));
+});
+
+test("Test 'fib.c'.", async () => {
+    const compiler = new Compiler();
+    const result = compiler.compile(`
+        int fibonacci(int n)
+        {
+            if (n <= 1)
+                return n;
+
+            return fibonacci(n - 1) + fibonacci(n - 2);
+        }
+
+        int result = fibonacci(18);
+    `);
 
     const interpreter = new Interpreter();
     await interpreter.run(result);
@@ -95,7 +115,7 @@ test("Test 'quick_sort.c'.", async () => {
         { 
             int x = array[h]; 
             int i = (l - 1); 
-          
+        
             for (int j = l; j <= h - 1; j++) 
             { 
                 if (array[j] <= x) 
@@ -109,41 +129,18 @@ test("Test 'quick_sort.c'.", async () => {
             return (i + 1); 
         } 
         
-        void qsort(int l, int h) 
-        { 
-            _push(l);
-            _push(h);
-        
-            int top = 2;
-          
-            while (top > 0) 
-            { 
-                h = _pop_int();
-                l = _pop_int();
-        
-                top -= 2;
-         
-                int p = partition(l, h); 
-        
-                if (p > 0 && p - 1 > l) 
-                { 
-                    _push(l);
-                    _push(p - 1);
-        
-                    top += 2;
-                } 
-          
-                if (p + 1 < h) 
-                { 
-                    _push(p + 1);
-                    _push(h);
-        
-                    top += 2;
-                }  
+        void quickSort(int low, int high)
+        {
+            if (low < high) 
+            {
+                int pi = partition(low, high);
+                
+                quickSort(low, pi - 1);
+                quickSort(pi + 1, high);
             }
         }
         
-        qsort(0, array.length - 1);
+        quickSort(0, array.length - 1);
     `);
 
     const interpreter = new Interpreter();
@@ -161,6 +158,97 @@ test("Test 'quick_sort.c'.", async () => {
     sortedList.forEach((value, index) =>
     {
         expect(interpreter.memoryRegions.get(`var_array_${index}`))
+            .toStrictEqual(new Uint32Array([ value ]));
+    });
+});
+
+test("Test 'merge_sort.c'.", async () => {
+    const compiler = new Compiler();
+    const result = compiler.compile(`
+        int arr[] = {
+            55, 47, 35, 15, 20, 42,
+            52, 30, 58, 15, 13, 19,
+            32, 18, 44, 11, 7, 9,
+            34, 56, 17, 25, 14, 48,
+            40, 4, 5, 7, 36, 1,
+            33, 49, 25, 26, 30, 9
+        };
+
+        int L[arr.length];
+        int R[arr.length];
+
+        void merge(int l, int m, int r)
+        {
+            int i, j, k;
+            int n1 = m - l + 1;
+            int n2 = r - m;
+        
+            for (i = 0; i < n1; i++)
+                L[i] = arr[l + i];
+
+            for (j = 0; j < n2; j++)
+                R[j] = arr[m + 1 + j];
+        
+            i = 0;
+            j = 0;
+            k = l;
+            while (i < n1 && j < n2) 
+            {
+                if (L[i] <= R[j]) {
+                    arr[k] = L[i];
+                    i++;
+                }
+                else {
+                    arr[k] = R[j];
+                    j++;
+                }
+                k++;
+            }
+        
+            while (i < n1) {
+                arr[k] = L[i];
+                i++;
+                k++;
+            }
+        
+            while (j < n2) {
+                arr[k] = R[j];
+                j++;
+                k++;
+            }
+        }
+        
+        void mergeSort(int l, int r)
+        {
+            if (l < r) 
+            {
+                int m = l + (r - l) / 2;
+
+                mergeSort(l, m);
+                mergeSort(m + 1, r);
+        
+                merge(l, m, r);
+            }
+        }
+        
+        mergeSort(0, arr.length - 1);
+    `);
+
+    const interpreter = new Interpreter();
+    await interpreter.run(result);
+
+    const sortedList = [
+        55, 47, 35, 15, 20, 42,
+        52, 30, 58, 15, 13, 19,
+        32, 18, 44, 11, 7, 9,
+        34, 56, 17, 25, 14, 48,
+        40, 4, 5, 7, 36, 1,
+        33, 49, 25, 26, 30, 9
+    ].sort((a, b) => a - b);
+
+    sortedList.forEach((value, index) =>
+    {
+        expect(interpreter.memoryRegions.get(`var_arr_${index}`))
             .toStrictEqual(new Uint32Array([ value ]));
     });
 });
@@ -635,12 +723,25 @@ test("Test 'bcd.c'.", async () => {
         int year = 2021;
         
         int bcd = 0;
+
+        int stack[32] = {};
+        int stack_index = 0;
+
+        void push(int value)
+        {
+            stack[stack_index++] = value;
+        }
+
+        int pop()
+        {
+            return stack[--stack_index];
+        }
         
         void placeNumber(int number, int digits)
         {
             for (int i = digits; i > 0; i--)
             {
-                _push(number % 10);
+                push(number % 10);
         
                 number /= 10;
             }
@@ -648,7 +749,7 @@ test("Test 'bcd.c'.", async () => {
             for (int i = 0; i < digits; i++)
             {
                 bcd <<= 4;
-                bcd |= _pop_int();
+                bcd |= pop();
             }
         }
         

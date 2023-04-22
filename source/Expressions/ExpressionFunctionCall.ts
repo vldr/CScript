@@ -43,15 +43,7 @@ export default class ExpressionFunctionCall extends Expression
         const nodeParameters = node.parameters;
         const functionIdentifier = node.identifier;
 
-        if (functionName === "_push")
-        {
-            return this.generatePushIntrinsic(node);
-        }
-        else if (functionName === "_pop_uint" || functionName === "_pop_int" || functionName === "_pop_float")
-        {
-            return this.generatePopIntrinsic(node);
-        }
-        else if (functionName === "_urand")
+        if (functionName === "_urand")
         {
             return this.generateURandIntrinsic(node);
         }
@@ -92,27 +84,29 @@ export default class ExpressionFunctionCall extends Expression
         const expressionResult = new ExpressionResult(fnReturnType, this);
         const scopeVariables = this._scope.getVariablesInFunction();
 
+        const isVoidType = !(fnReturnType instanceof TypeVoid);
+        const isRecursive = this._scope.getFunction()?.name === functionName;
+
         expressionResult.pushInstruction(new InstructionSAVEPUSHA());
         expressionResult.pushInstruction(new InstructionSAVEPUSHB());
 
-        scopeVariables.forEach((variable) => 
+        if (isRecursive)
         {
-            if (
-                (
-                    variable.type instanceof TypeInteger ||
-                    variable.type instanceof TypeUnsignedInteger ||
-                    variable.type instanceof TypeFloat
+            for (const variable of scopeVariables) 
+            {
+                if (
+                    (
+                        variable.type instanceof TypeInteger ||
+                        variable.type instanceof TypeUnsignedInteger ||
+                        variable.type instanceof TypeFloat
+                    )
+                    && variable.type.arraySize <= 0
                 )
-                && variable.type.arraySize <= 0
-            )
-            {
-                expressionResult.pushInstruction(new InstructionPUSH(variable));
+                {
+                    expressionResult.pushInstruction(new InstructionPUSH(variable));
+                }
             }
-            else if (this._scope.getFunction()?.name === functionName)
-            {
-                ExternalWarnings.STRUCT_OR_ARRAY_WONT_RECURSE(node, this._compiler, variable.name);
-            }
-        })
+        }
 
         fnParameters.forEach((parameter, index) =>
         {
@@ -132,23 +126,24 @@ export default class ExpressionFunctionCall extends Expression
 
         expressionResult.pushInstruction(new InstructionCALL(fn));
 
-        const isVoidType = !(fnReturnType instanceof TypeVoid);
-            
-        scopeVariables.reverse().forEach((variable) => 
+        if (isRecursive)
         {
-            if (
-                (
-                    variable.type instanceof TypeInteger ||
-                    variable.type instanceof TypeUnsignedInteger ||
-                    variable.type instanceof TypeFloat
-                )
-                && variable.type.arraySize <= 0
-            )
+            for (const variable of scopeVariables.reverse()) 
             {
-                if (isVoidType) { expressionResult.pushInstruction(new InstructionSAVEFRONT(1)); }
-                expressionResult.pushInstruction(new InstructionPOP(variable));
+                if (
+                    (
+                        variable.type instanceof TypeInteger ||
+                        variable.type instanceof TypeUnsignedInteger ||
+                        variable.type instanceof TypeFloat
+                    )
+                    && variable.type.arraySize <= 0
+                )
+                {
+                    if (isVoidType) { expressionResult.pushInstruction(new InstructionSAVEFRONT(1)); }
+                    expressionResult.pushInstruction(new InstructionPOP(variable));
+                }
             }
-        });
+        }
         
         if (isVoidType) { expressionResult.pushInstruction(new InstructionSAVEFRONT(1)); }
         expressionResult.pushInstruction(new InstructionGETPOPB());
@@ -225,107 +220,6 @@ export default class ExpressionFunctionCall extends Expression
         if (newline)
         {
             expressionResult.pushInstruction(new InstructionPRINT("\n"));
-        }
-
-        return expressionResult;
-    }
-
-    private generatePushIntrinsic(node: NodeFunctionCall): ExpressionResult
-    {
-        const functionName = node.function_name;
-        const nodeParameters = node.parameters;
-        const expectedParameters = 1;
-
-        if (nodeParameters.length !== expectedParameters)
-        {
-            throw ExternalErrors.PARAMETER_MISSING(node, functionName, expectedParameters, nodeParameters.length);
-        }
-
-        const returnType = new TypeVoid(new QualifierNone(), 0);
-
-        const targetExpressionResult = this._compiler.generateExpression(
-            new DestinationStack(returnType), this._scope, nodeParameters[0]
-        );
-
-        const expressionResult = new ExpressionResult(returnType, this);
-
-        if ((
-                targetExpressionResult.type instanceof TypeInteger ||
-                targetExpressionResult.type instanceof TypeUnsignedInteger ||
-                targetExpressionResult.type instanceof TypeFloat
-            )
-            && targetExpressionResult.type.arraySize <= 0
-        )
-        {
-            expressionResult.pushExpressionResult(targetExpressionResult);
-        }
-        else
-        {
-            throw ExternalErrors.UNSUPPORTED_TYPE_FOR_PUSH(node, targetExpressionResult.type.toString());
-        }
-
-        return expressionResult;
-    }
-
-    private generatePopIntrinsic(node: NodeFunctionCall): ExpressionResult
-    {
-        const functionName = node.function_name;
-        const nodeParameters = node.parameters;
-
-        const destination = this._destination;
-
-        const expectedParameters = 0;
-
-        if (nodeParameters.length !== expectedParameters)
-        {
-            throw ExternalErrors.PARAMETER_MISSING(node, functionName, expectedParameters, nodeParameters.length);
-        }
-
-        let returnType: Type;
-
-        if (functionName.endsWith("_uint"))
-        {
-            returnType = new TypeUnsignedInteger(new QualifierNone(), 0);
-        }
-        else if (functionName.endsWith("_int"))
-        {
-            returnType = new TypeInteger(new QualifierNone(), 0);
-        }
-        else if (functionName.endsWith("_float"))
-        {
-            returnType = new TypeFloat(new QualifierNone(), 0);
-        }
-        else
-        {
-            throw InternalErrors.generateError("Invalid pop type.");
-        }
-
-        //////////////////////////////////////////////////////////////////
-
-        const expressionResult = new ExpressionResult(returnType, this);
-
-        if (destination instanceof DestinationVariable)
-        {
-            expressionResult.pushInstruction(new InstructionPOP(destination.variable));
-        }
-        else if (destination instanceof DestinationRegisterA)
-        {
-            expressionResult.pushInstruction(new InstructionGETPOPA());
-        }
-        else if (destination instanceof DestinationRegisterB)
-        {
-            expressionResult.pushInstruction(new InstructionGETPOPB());
-        }
-        else if (destination instanceof DestinationStack)
-        {
-        }
-        else if (destination instanceof DestinationNone)
-        {
-            expressionResult.pushInstruction(new InstructionPOPNOP());
-        }
-        else
-        {
-            throw InternalErrors.generateError(`Unknown destination type, ${destination.constructor}.`);
         }
 
         return expressionResult;
