@@ -53,6 +53,43 @@ test("Test PUSH, VPUSH, STOREPUSH, SAVEPUSH.", async () => {
     expect(interpreter.stack.pop()).toStrictEqual(new Float32Array([ 289 ]));
 });
 
+test("Test SAVEPUSHA, SAVEPUSHB, SAVEFRONT.", async () => {
+    const interpreter = new Interpreter();
+    await interpreter.runWithoutStackCheck(`
+        VGETA 10
+        SAVEPUSHA
+        
+        VGETB 20
+        SAVEPUSHB
+
+        VPUSH 30
+        SAVEFRONT 2
+        
+        HALT
+    `);
+
+    expect(interpreter.stack.pop()).toStrictEqual(new Uint32Array([ 10 ]));
+    expect(interpreter.stack.pop()).toStrictEqual(new Uint32Array([ 30 ]));
+    expect(interpreter.stack.pop()).toStrictEqual(new Uint32Array([ 20 ]));
+});
+
+test("Test PRINT.", async () => {
+    let output = new String();
+
+    const interpreter = new Interpreter();
+    interpreter.setOutput(data => { output += data });
+
+    await interpreter.run(`
+        PRINT hello%20world%20
+        VPUSH 123
+        PRINT
+        
+        HALT
+    `);
+
+    expect(output).toStrictEqual("hello world 123");
+});
+
 test("Test MOVOUTPUSH.", async () => {
     const interpreter = new Interpreter();
     await interpreter.runWithoutStackCheck(`

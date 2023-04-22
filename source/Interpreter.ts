@@ -7,7 +7,7 @@ export default class Interpreter
     private _callStack = new Array<number>();
     private _programCounter: number;
     private _ticks: number;
-    private _output = (data: string) => process.stdout.write(data);
+    private _output = (data: string) => { process.stdout.write(data) };
 
     private _labels = new Map<string, InterpreterLabel>();
     private _memoryRegions = new Map<string, ArrayBuffer>();
@@ -44,6 +44,11 @@ export default class Interpreter
         this.processLabels();
         this.processMemoryRegions();
         this.processInstructions();
+    }
+
+    public async setOutput(output: (_: string) => void)
+    {
+        this._output = output;
     }
 
     private async initExports()
