@@ -1,5 +1,4 @@
 import Node from "./Node";
-import NodeIdentifier from "./NodeIdentifier";
 import NodeConstant from "./NodeConstant";
 
 export default class NodeParameter extends Node

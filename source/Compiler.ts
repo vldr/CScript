@@ -8,7 +8,6 @@ import Destination from "./Destinations/Destination";
 import ExpressionResult from "./Expressions/ExpressionResult";
 import Expression from "./Expressions/Expression";
 import Node from "./Nodes/Node";
-import InternalErrors from "./Errors/InternalErrors";
 import CompilerMessage from "./Errors/CompilerMessage";
 import Symbol from "./Symbols/Symbol";
 

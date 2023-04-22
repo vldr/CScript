@@ -27,11 +27,7 @@ export default class StatementDeclarator extends Statement
         const typeName = typeAttributeNode.name;
         const qualifierName = typeAttributeNode.qualifier;
 
-        //////////////////////////////////////////////
-
         let qualifier = Utils.getQualifer(typeAttributeNode, qualifierName);
-
-        //////////////////////////////////////////////
 
         declaratorsNode.forEach((declaratorNode) =>
         {
@@ -42,8 +38,6 @@ export default class StatementDeclarator extends Statement
             {
                 throw ExternalErrors.VARIABLE_NAME_TAKEN(identifierNode, variableName);
             }
-
-            //////////////////////////////////////////////
 
             let size = 0;
 
@@ -74,8 +68,6 @@ export default class StatementDeclarator extends Statement
             {
                 throw ExternalErrors.ARRAY_TOO_SMALL(declaratorNode);
             }
-
-            //////////////////////////////////////////////
 
             const type = Utils.getType(typeAttributeNode, typeName, size, qualifier, this._scope);
             let variable: Variable;

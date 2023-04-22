@@ -11,7 +11,6 @@ import NodeScope from "../Nodes/NodeScope";
 import Node from "../Nodes/Node";
 import InstructionJMP from "../Instructions/InstructionJMP";
 import Scope from "../Scope";
-import Function from "../Function";
 import NodeWhileStatement from "../Nodes/NodeWhileStatement";
 import Loop from "../Loop";
 
@@ -28,8 +27,6 @@ export default class StatementWhile extends Statement
         {
             throw ExternalErrors.CANNOT_DECLARE_VAR_HERE(body);
         }
-
-        /////////////////////////////////////////////////////////
 
         const substatementIndex = this._scope.getNextSubstatementIndex();
         const statementName = `while_loop_${substatementIndex}`;

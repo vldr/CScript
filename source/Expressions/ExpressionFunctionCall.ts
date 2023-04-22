@@ -2,7 +2,6 @@ import Expression from "./Expression";
 import TypeInteger from "../Types/TypeInteger";
 import ExpressionResult from "./ExpressionResult";
 import InternalErrors from "../Errors/InternalErrors";
-import Type from "../Types/Type";
 import TypeUnsignedInteger from "../Types/TypeUnsignedInteger";
 import DestinationRegisterA from "../Destinations/DestinationRegisterA";
 import DestinationRegisterB from "../Destinations/DestinationRegisterB";
@@ -32,7 +31,6 @@ import InstructionPUSH from "../Instructions/InstructionPUSH";
 import InstructionSAVEPUSHA from "../Instructions/InstructionSAVEPUSHA";
 import InstructionSAVEPUSHB from "../Instructions/InstructionSAVEPUSHB";
 import InstructionSAVEFRONT from "../Instructions/InstructionSAVEFRONT";
-import ExternalWarnings from "../Errors/ExternalWarnings";
 
 export default class ExpressionFunctionCall extends Expression
 {

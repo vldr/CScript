@@ -1,5 +1,4 @@
 import Node from "./Node";
-import NodeOperator from "./NodeOperator";
 
 export default class NodeIfStatement extends Node
 {

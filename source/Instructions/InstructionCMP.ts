@@ -1,5 +1,4 @@
 import Instruction from "./Instruction";
-import DestinationVariable from "../Destinations/DestinationVariable";
 import Type from "../Types/Type";
 import InternalErrors from "../Errors/InternalErrors";
 import TypeFloat from "../Types/TypeFloat";

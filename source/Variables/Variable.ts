@@ -1,7 +1,5 @@
 import Scope from "../Scope";
 import Type from "../Types/Type";
-import Qualifier from "../Qualifiers/Qualifier";
-import QualifierConst from "../Qualifiers/QualifierConst";
 import Compiler from "../Compiler";
 
 export default abstract class Variable

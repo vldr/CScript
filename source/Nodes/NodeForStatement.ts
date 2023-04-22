@@ -1,6 +1,4 @@
 import Node from "./Node";
-import NodeOperator from "./NodeOperator";
-import NodeExpression from "./NodeExpression";
 
 export default class NodeForStatement extends Node
 {

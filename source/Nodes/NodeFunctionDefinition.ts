@@ -2,7 +2,6 @@ import Node from "./Node";
 import NodeType from "./NodeType";
 import NodeParameter from "./NodeParameter";
 import NodeScope from "./NodeScope";
-import NodeLocation from "./NodeLocation";
 import NodeIdentifier from "./NodeIdentifier";
 
 export default class NodeFunctionDefinition extends Node
