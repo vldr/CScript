@@ -162,7 +162,7 @@ test("Test 'quick_sort.c'.", async () => {
     });
 });
 
-test("Test 'merge_sort.c'.", async () => {
+test("Test 'merge_sort_and_selection_sort.c'.", async () => {
     const compiler = new Compiler();
     const result = compiler.compile(`
         int arr[] = {
@@ -173,6 +173,36 @@ test("Test 'merge_sort.c'.", async () => {
             40, 4, 5, 7, 36, 1,
             33, 49, 25, 26, 30, 9
         };
+
+        int array[] = {
+            55, 47, 35, 15, 20, 42,
+            52, 30, 58, 15, 13, 19,
+            32, 18, 44, 11, 7, 9,
+            34, 56, 17, 25, 14, 48,
+            40, 4, 5, 7, 36, 1,
+            33, 49, 25, 26, 30, 9
+        };
+
+        void swap(int i, int j) 
+        {
+            int temp = array[i];
+            array[i] = array[j];
+            array[j] = temp;
+        }
+        
+        int findMin(int start, int end)
+        {
+            int indexSmallest = start;
+            
+            for (int i = start; i < end; i++)
+            {
+                if (array[i] < array[indexSmallest])
+                {
+                    indexSmallest = i;
+                }
+            }
+            return indexSmallest;
+        }
 
         int L[arr.length];
         int R[arr.length];
@@ -228,6 +258,19 @@ test("Test 'merge_sort.c'.", async () => {
                 mergeSort(m + 1, r);
         
                 merge(l, m, r);
+
+                int start = l;
+                int end = r + 1;
+
+                for (int i = start; i < end - 1; i++)
+                {
+                    int indexSmallest = findMin(i + 1, end);
+                    
+                    if (array[indexSmallest] < array[i])
+                    {
+                        swap(i, indexSmallest);
+                    }
+                }
             }
         }
         
@@ -249,6 +292,9 @@ test("Test 'merge_sort.c'.", async () => {
     sortedList.forEach((value, index) =>
     {
         expect(interpreter.memoryRegions.get(`var_arr_${index}`))
+            .toStrictEqual(new Uint32Array([ value ]));
+
+        expect(interpreter.memoryRegions.get(`var_array_${index}`))
             .toStrictEqual(new Uint32Array([ value ]));
     });
 });
