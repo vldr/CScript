@@ -16,7 +16,7 @@
             }
 
             .func {
-                color: #f726dd !important;
+                color: #dd00c1 !important;
             }
 
             .structMember {
@@ -34,11 +34,12 @@
             }
 
             #console {
+                height: calc(100vh);
+                width: 100%;
+
                 display: flex;
                 flex-direction: column;
-
                 box-sizing: border-box;
-                width: 100%;
                 background: #fafafa;
                 border-left: 1px solid #e5e7eb;
             }
@@ -82,6 +83,12 @@
                 font-weight: 450;
                 color: #787878;
                 margin-left: 14px;
+                line-height: 18px;
+            }
+
+            #console-status span {
+                font-size: 13px;
+                color: #adadad;
             }
 
             #console-output {
@@ -91,6 +98,7 @@
                 font-size: 15px;
                 color: #666666;
                 line-height: 23px;
+                overflow: auto;
             }
         </style>
 	</head>

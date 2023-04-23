@@ -1,5 +1,8 @@
 importScripts("interpreter.js");
 
+const interpreter = new Interpreter();
+interpreter.setOutput((text) => { postMessage({ type: "print", text }) });
+
 onmessage = async (event) => 
 {
     const data = event.data;
@@ -8,9 +11,6 @@ onmessage = async (event) =>
     {
         case "start": 
         {
-            const interpreter = new Interpreter();
-            interpreter.setOutput((text) => { postMessage({ type: "print", text }) });
-
             try 
             {
                 await interpreter.run(data.bytecode);
@@ -21,7 +21,7 @@ onmessage = async (event) =>
             {
                 postMessage({ type: "error", message: error.message });
             }
-            
+
             break;
         }
     }

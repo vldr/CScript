@@ -43,7 +43,8 @@ class EditorConsole
         this.worker.postMessage({ type: "start", bytecode: this.bytecode });
 
         this.clear();
-        this.print("Program has been started.\n")
+        this.print("Program has been started.\n");
+        this.onTimer();
     }
 
     stop()
@@ -70,7 +71,7 @@ class EditorConsole
         clearInterval(this.executionTimer);
         this.executionTimer = undefined;
     
-        this.setStatus(`Press 'Run' to start a program. (Program ran for ${this.executionTime.toFixed(1)} seconds.)`);
+        this.setStatus(`Press 'Run' to start a program. <br><span>(Program ran for ${this.executionTime.toFixed(1)} seconds.)</span>`);
     }
 
     clear()
@@ -116,7 +117,7 @@ class EditorConsole
         {
             case "stop": 
             {
-                this.print("Program has finished execution.\n");
+                this.print("Program has finished executing.\n");
                 this.stop();
 
                 break;
@@ -142,7 +143,7 @@ class EditorConsole
 
     setStatus(status)
     {
-        this.consoleStatus.textContent = status;
+        this.consoleStatus.innerHTML = status;
     }
 
     setBytecode(bytecode)
@@ -254,20 +255,20 @@ class Editor
             });
 
             this.editor.layout();
-            this.editor.onDidChangeModelContent(() => this.input());
+            this.editor.onDidChangeModelContent(() => this.onInput());
             this.deltaDecorationsList = [];
         });
 
-        this.editorConsole = new EditorConsole(this);
+        this.editorConsole = new EditorConsole(this);    
     }
 
-    input() 
+    onInput() 
     {
         let markersList = [];
         let compiler = new Compiler();
 
         let text = this.editor.getValue();
-        let bytecode = "";
+        let bytecode = "HALT";
 
         try
         {
