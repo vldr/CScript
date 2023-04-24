@@ -151,6 +151,145 @@ class EditorConsole
     }
 }
 
+class EditorTabs
+{
+    #LOCAL_STORAGE_KEY = "CScript"
+
+    constructor(editor)
+    {
+        this.editor = editor;
+
+        this.tabIndex = 0;
+        this.tabs = [];
+
+        this.tabElements = document.getElementById("editor-tabs-list");
+        this.addTabButton = document.getElementById("editor-tabs-add-button");
+        this.addTabButton.onclick = () => this.addTab();
+    }
+
+    load()
+    {
+        const json = JSON.parse(window.localStorage.getItem(this.#LOCAL_STORAGE_KEY));
+
+        if (!json)
+        {
+            this.tabIndex = 0;
+            this.tabs.push({name: "fibonacci", text: "/* Iterative fibonacci */\nint fibonacci(int n)\n{\n    int previousPreviousNumber, previousNumber = 0, currentNumber = 1;\n\n    for (int i = 1; i < n; i++) \n    {\n        previousPreviousNumber = previousNumber;\n        previousNumber = currentNumber;\n        currentNumber = previousPreviousNumber + previousNumber;\n    }\n\n    return currentNumber;\n}\n\n// The memory region \'var_result\' should contain 2584 afterwards.\nint result = fibonacci(18);" });
+            this.tabs.push({name: "quick_sort", text: "int array[] = {\n    55, 47, 35, 15, 20, 42,\n    52, 30, 58, 15, 13, 19,\n    32, 18, 44, 11, 7, 9,\n    34, 56, 17, 25, 14, 48,\n    40, 4, 5, 7, 36, 1,\n    33, 49, 25, 26, 30, 9\n};\n\nvoid swap(int i, int j) \n{\n    int temp = array[i];\n    array[i] = array[j];\n    array[j] = temp;\n}\n\nint partition(int l, int h) \n{ \n    int x = array[h]; \n    int i = (l - 1); \n\n    for (int j = l; j <= h - 1; j++) \n    { \n        if (array[j] <= x) \n        { \n            i++; \n            swap(i, j); \n        } \n    } \n    swap(i + 1, h); \n\n    return (i + 1); \n} \n\nvoid quickSort(int low, int high)\n{\n    if (low < high) \n    {\n        int pi = partition(low, high);\n        \n        quickSort(low, pi - 1);\n        quickSort(pi + 1, high);\n    }\n}\n\nquickSort(0, array.length - 1);" });
+        }
+        else
+        {
+            this.tabs = json.tabs;
+            this.tabIndex = json.tabIndex;
+        }
+
+        this.selectTab(this.tabIndex);
+    }
+    
+    save()
+    {
+        const json = JSON.stringify({ tabIndex: this.tabIndex, tabs: this.tabs });
+
+        window.localStorage.setItem(this.#LOCAL_STORAGE_KEY, json);
+    }
+
+    render()
+    {
+        this.tabElements.innerHTML = "";
+
+        for (let index = 0; index < this.tabs.length; index++)
+        {
+            const tab = this.tabs[index];
+
+            const tabElement = document.createElement("div");
+            tabElement.onclick = () => this.selectTab(index);
+            tabElement.className = "editor-tab";
+            tabElement.innerHTML = `
+                <div class="editor-tab-icon">CS</div>
+                ${tab.name}
+            `;
+
+            if (this.tabIndex == index)
+            {
+                const removeTabElement = document.createElement("div");
+                removeTabElement.onclick = (event) => { event.stopPropagation(); this.removeTab(); };
+                removeTabElement.className = "editor-tab-delete";
+                removeTabElement.innerHTML = `
+                    <svg class="editor-tab-delete" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0px" y="0px" 
+                        viewBox="0 0 357 357" xml:space="preserve">
+                        <polygon points="357,35.7 321.3,0 178.5,142.8 35.7,0 0,35.7 142.8,178.5 0,321.3 35.7,357 178.5,214.2 321.3,357 357,321.3 214.2,178.5 "/>     
+                    </svg>
+                `;
+
+                tabElement.className += " editor-tab-active";
+                tabElement.appendChild(removeTabElement);
+            }
+
+            this.tabElements.appendChild(tabElement);
+        }
+    }
+
+    addTab()
+    {
+        const name = prompt("Please enter a name:");
+
+        if (name) 
+        {
+            this.tabs.push({ name, text: "" });
+
+            this.save();
+            this.selectTab(this.tabs.length - 1);
+        }
+    }
+
+    removeTab()
+    {
+        if (confirm(`Are you sure you want to delete '${this.tabs[this.tabIndex].name}'?`))
+        {
+            this.tabs.splice(this.tabIndex, 1);
+
+            this.save();
+            this.selectTab(this.tabIndex);
+        }       
+    }
+
+    selectTab(index)
+    {
+        if (index < 0 || index >= this.tabs.length)
+        {
+            this.tabIndex = 0;
+        }
+        else
+        {
+            this.tabIndex = index;
+        }
+
+        if (this.tabs.length)
+        {
+            this.editor.setText(this.tabs[this.tabIndex].text);
+            this.editor.setReadOnly(false);
+        }
+        else
+        {
+            this.editor.setText("");
+            this.editor.setReadOnly(true);
+        }
+  
+        this.render();
+    }
+
+    setText(text)
+    {
+        if (this.tabIndex < 0 || this.tabIndex >= this.tabs.length)
+        {
+            return;
+        }
+
+        this.tabs[this.tabIndex].text = text;
+        this.save();
+    }
+}
+
 class Editor
 {
     constructor() 
@@ -263,8 +402,10 @@ class Editor
                     "scrollbar.shadow": "#00000000"
                 }
             });
-
+                  
             this.model = monaco.editor.createModel("", "cscript"); 
+
+            this.editorDeltaDecorationsList = [];
             this.editorElement = document.getElementById("editor");
             this.editor = monaco.editor.create(this.editorElement, {
                 theme: "cscript",
@@ -276,12 +417,24 @@ class Editor
                 fixedOverflowWidgets: true
             });
 
+            this.editorConsole = new EditorConsole();    
+            this.editorTabs = new EditorTabs(this);
+
             this.editor.layout();
             this.editor.onDidChangeModelContent(() => this.onInput());
-            this.deltaDecorationsList = [];
-        });
 
-        this.editorConsole = new EditorConsole(this);    
+            this.editorTabs.load();
+        });
+    }
+
+    setText(text)
+    {
+        this.editor.setValue(text);
+    }
+
+    setReadOnly(value)
+    {
+        this.editor.updateOptions({readOnly: value});
     }
 
     onInput() 
@@ -308,8 +461,10 @@ class Editor
             });
         }
 
+        this.editorTabs.setText(text);
         this.editorConsole.setBytecode(bytecode);
-        this.deltaDecorationsList = this.editor.deltaDecorations(this.deltaDecorationsList, compiler.getSymbols().map((symbol) =>
+
+        this.editorDeltaDecorationsList = this.editor.deltaDecorations(this.editorDeltaDecorationsList, compiler.getSymbols().map((symbol) =>
         {
             const location = symbol.location;
             const className = symbol.className;
