@@ -1,7 +1,10 @@
 importScripts("interpreter.js");
 
-const interpreter = new Interpreter();
-interpreter.setOutput((text) => { postMessage({ type: "print", text }) });
+this.interpreter = new Interpreter();
+this.interpreter.setOutput((text) => 
+{ 
+    postMessage({ type: "print", text });
+});
 
 onmessage = async (event) => 
 {
@@ -13,7 +16,7 @@ onmessage = async (event) =>
         {
             try 
             {
-                await interpreter.run(data.bytecode);
+                await this.interpreter.run(data.bytecode);
 
                 postMessage({ type: "stop" });
             } 

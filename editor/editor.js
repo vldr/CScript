@@ -43,7 +43,6 @@ class EditorConsole
         this.worker.postMessage({ type: "start", bytecode: this.bytecode });
 
         this.clear();
-        this.print("Program has been started.\n");
         this.onTimer();
     }
 
@@ -71,7 +70,7 @@ class EditorConsole
         clearInterval(this.executionTimer);
         this.executionTimer = undefined;
     
-        this.setStatus(`Press 'Run' to start a program. <br><span>(Program ran for ${this.executionTime.toFixed(1)} seconds.)</span>`);
+        this.setStatus(`Press "Run" to start a program. <br><span>(Program ran for ${this.executionTime.toFixed(1)} seconds.)</span>`);
     }
 
     clear()
@@ -81,7 +80,7 @@ class EditorConsole
 
     print(text)
     {
-        this.consoleOutput.textContent += text;
+        this.consoleOutput.innerHTML += text;
     }
 
     onClick()
@@ -93,20 +92,20 @@ class EditorConsole
         else
         {
             this.stop();
-            this.print("Program has been terminated.\n");
+            this.print("Program was terminated.\n");
         }
     } 
 
     onTimer() 
     {
+        this.setStatus(`Program is running. (${this.executionTime.toFixed(1)} seconds)`);
         this.executionTime += 0.1;
-        this.setStatus(`Program has been running for ${this.executionTime.toFixed(1)} seconds.`);
     }
 
     onWorkerError()
     {
         this.stop();
-        this.print("Program was terminated unexpectedly.\n");
+        this.print("Program exited unexpectedly due to an error.\n");
     }
 
     onWorkerMessage(event)
@@ -117,7 +116,7 @@ class EditorConsole
         {
             case "stop": 
             {
-                this.print("Program has finished executing.\n");
+                this.print("Program exited.\n");
                 this.stop();
 
                 break;
@@ -156,7 +155,7 @@ class Editor
 {
     constructor() 
     {
-        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.21.2/min/vs' } });
+        require.config({ paths: { "vs": "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.21.2/min/vs" } });
         require(["vs/editor/editor.main"], () => {
             monaco.languages.register({ id: "cscript" });
             monaco.languages.setLanguageConfiguration("cscript",
@@ -168,19 +167,8 @@ class Editor
             );
             
             monaco.languages.setMonarchTokensProvider("cscript", {
-                keywords: [
-                    "int",
-                    "uint",
-                    "float",
-                    "struct",
+                keywords: [ 
                     "const",
-                    
-                    "_print",
-                    "_println",
-                    
-                    "_tick",
-                    "_urand",
-                    "void", 
                     "return", 
                     "do", 
                     "for", 
@@ -189,35 +177,73 @@ class Editor
                     "continue", 
                     "if", 
                     "else",
+                    "_print",
+                    "_println",
+                    "_tick",
+                    "_urand",
                 ],
+                
+                typeKeywords: [
+                    "struct",
+                    "void",
+                    "int",
+                    "uint",
+                    "float",
+                ],
+                
                 operators: [
-                    "=", ">", "<", "!", "~", "?", ":", "==", "<=", ">=", "!=",
+                    "=", ">", "<", "!", "~", "==", "<=", ">=", "!=",
                     "&&", "||", "++", "--", "+", "-", "*", "/", "&", "|", "^", "%",
-                    "<<", ">>", ">>>", "+=", "-=", "*=", "/=", "&=", "|=", "^=",
-                    "%=", "<<=", ">>=", ">>>="
+                    "<<", ">>", "+=", "-=", "*=", "/=", "&=", "|=", "^=",
+                    "%=", "<<=", ">>="
                 ],
-                symbols:  /[=><!~?:&|+\-*\/\^%]+/,
+                
+                symbols: /[=><!~?:&|+\-*\/\^%]+/,
+                escapes: /\\(?:[abfnrtv\\""]|x[0-9A-Fa-f]{1,4}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})/,
+
                 tokenizer: {
                     root: [
-                        [/\d+\.[fF]/, "number"],
-                        [/\d*\.\d+([eE][\-+]?\d+)?[Ff]?/, "number"],
-                        [/0[xX][0-9a-fA-F]+[uU]/, "number"],
-                        [/0[xX][0-9a-fA-F]+/, "number"],
-                        [/\d+[uU]/, "number"],
-                        [/\d+/, "number"],
-                        [/[a-zA-Z_$][\w$]*/, { cases: { "@keywords": "opcode","@default": "address" } }], { include: "@whitespace" },
-                        [/[{}()\[\]]/, "default"],
-                        [/@symbols/, { cases: { "@operators": "label", "@default"  : "" } } ],
-                        [/[;,.]/, "default"],
+                        [/[a-z_$][\w$]*/, { cases: { "@typeKeywords": "keyword",
+                                                    "@keywords": "keyword",
+                                                    "@default": "identifier" } }],
+                        [/[A-Z][\w\$]*/, "type.identifier" ],
+                        { include: "@whitespace" },
+
+                        [/[{}()\[\]]/, "@brackets"],
+                        [/[<>](?!@symbols)/, "@brackets"],
+                        [/@symbols/, { cases: { "@operators": "operator",
+                                                "@default"  : "" } } ],
+
+                        [/\d*\.\d+([eE][\-+]?\d+)?/, "number.float"],
+                        [/0[xX][0-9a-fA-F]+u/, 'number.hex'],
+                        [/0[xX][0-9a-fA-F]+/, 'number.hex'],
+                        [/\d+u/, 'number'],
+                        [/\d+/, 'number'],
+
+                        [/[;,.]/, "delimiter"],
+
+                        [/"([^"\\]|\\.)*$/, "string.invalid" ],
+                        [/"/,  { token: "string.quote", bracket: "@open", next: "@string" } ],
+
+                        [/"[^\\"]"/, "string"],
+                        [/(")(@escapes)(")/, ["string","string.escape","string"]],
+                        [/"/, "string.invalid"]
                     ],
-                    
+                
                     comment: [
                         [/[^\/*]+/, "comment" ],
                         [/\/\*/,    "comment", "@push" ],
                         ["\\*/",    "comment", "@pop"  ],
                         [/[\/*]/,   "comment" ]
                     ],
-                    
+                
+                    string: [
+                        [/[^\\"]+/,  "string"],
+                        [/@escapes/, "string.escape"],
+                        [/\\./,      "string.escape.invalid"],
+                        [/"/,        { token: "string.quote", bracket: "@close", next: "@pop" } ]
+                    ],
+                
                     whitespace: [
                         [/[ \t\r\n]+/, "white"],
                         [/\/\*/,       "comment", "@comment" ],
@@ -230,15 +256,11 @@ class Editor
                 base: "vs",
                 inherit: true,
                 rules: [
-                    { token: "opcode", foreground: "004eff", bold: true },
-                    { token: "address", foreground: "038b7e" },
-                    { token: "number", foreground: "19a300" },
-                    { token: "label", foreground: "004eff" },
-                    { token: "comment", foreground: "048918" },
-                    { token: "default", foreground: "858585" },
                 ],
                 colors: {
-                    "editorLineNumber.foreground": "#858585"
+                    "editorLineNumber.foreground": "#858585",
+                    "editor.paddingTop": "10px",
+                    "scrollbar.shadow": "#00000000"
                 }
             });
 
