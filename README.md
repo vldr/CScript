@@ -4,7 +4,7 @@
 
 ---
 
-A C-like scripting toy language built in Typescript and is designed to run in the web.
+A C-like toy scripting language built in Typescript and which is designed to run in the web.
 
 - [Try it out](#try-it-out)
 - [Components](#components)

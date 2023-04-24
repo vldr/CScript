@@ -258,9 +258,17 @@ class EditorTabs
         if (confirm(`Are you sure you want to delete '${this.tabs[this.tabIndex].name}'?`))
         {
             this.tabs.splice(this.tabIndex, 1);
-
             this.save();
-            this.selectTab(this.tabIndex);
+
+            if (this.tabIndex == this.tabs.length)
+            {
+                this.selectTab(this.tabIndex - 1);
+            }
+            else
+            {
+                this.selectTab(this.tabIndex);
+            }
+            
         }       
     }
 
