@@ -80,7 +80,18 @@ class EditorConsole
 
     print(text)
     {
+        let shouldScrollToBottom = Math.abs(
+            this.consoleOutput.scrollHeight - 
+            this.consoleOutput.scrollTop - 
+            this.consoleOutput.clientHeight
+        ) < 1;
+
         this.consoleOutput.innerHTML += text;
+
+        if (shouldScrollToBottom)
+        {
+            this.consoleOutput.scrollTo(0, this.consoleOutput.scrollHeight);
+        }
     }
 
     onClick()
@@ -174,8 +185,8 @@ class EditorTabs
         if (!json)
         {
             this.tabIndex = 0;
-            this.tabs.push({name: "fibonacci", text: "/* Iterative fibonacci */\nint fibonacci(int n)\n{\n    int previousPreviousNumber, previousNumber = 0, currentNumber = 1;\n\n    for (int i = 1; i < n; i++) \n    {\n        previousPreviousNumber = previousNumber;\n        previousNumber = currentNumber;\n        currentNumber = previousPreviousNumber + previousNumber;\n    }\n\n    return currentNumber;\n}\n\n// The memory region \'var_result\' should contain 2584 afterwards.\nint result = fibonacci(18);" });
-            this.tabs.push({name: "quick_sort", text: "int array[] = {\n    55, 47, 35, 15, 20, 42,\n    52, 30, 58, 15, 13, 19,\n    32, 18, 44, 11, 7, 9,\n    34, 56, 17, 25, 14, 48,\n    40, 4, 5, 7, 36, 1,\n    33, 49, 25, 26, 30, 9\n};\n\nvoid swap(int i, int j) \n{\n    int temp = array[i];\n    array[i] = array[j];\n    array[j] = temp;\n}\n\nint partition(int l, int h) \n{ \n    int x = array[h]; \n    int i = (l - 1); \n\n    for (int j = l; j <= h - 1; j++) \n    { \n        if (array[j] <= x) \n        { \n            i++; \n            swap(i, j); \n        } \n    } \n    swap(i + 1, h); \n\n    return (i + 1); \n} \n\nvoid quickSort(int low, int high)\n{\n    if (low < high) \n    {\n        int pi = partition(low, high);\n        \n        quickSort(low, pi - 1);\n        quickSort(pi + 1, high);\n    }\n}\n\nquickSort(0, array.length - 1);" });
+            this.tabs.push({name: "fibonacci", text: `/**\n * fibonacci \n * Calculates Nth fibonacci number.\n */\nuint fibonacci(uint n)\n{\n    uint previousPreviousNumber, previousNumber = 0u, currentNumber = 1u;\n\n    for (uint i = 1u; i < n; i++) \n    {\n        previousPreviousNumber = previousNumber;\n        previousNumber = currentNumber;\n        currentNumber = previousPreviousNumber + previousNumber;\n    }\n\n    return currentNumber;\n}\n\n/**\n * print \n * Prints all the fibonacci numbers that can fit inside a 32-bit integer. \n */\nvoid print()\n{\n    for (uint i = 1u; i <= 47u; i++)\n    {\n        _println("fibonacci(", i, ") = ", fibonacci(i));\n    }\n}\n\nprint();` });
+            this.tabs.push({name: "quick_sort", text: `/**\n * array\n * The array we wish to sort.\n */\nint array[] = {\n    55, 47, 35, 15, 20, 42,\n    52, 30, 58, 15, 13, 19,\n    32, 18, 44, 11, 7, 9,\n    34, 56, 17, 25, 14, 48,\n    40, 4, 5, 7, 36, 1,\n    33, 49, 25, 26, 30, 9\n}; \n\n/**\n * swap \n * Swaps two numbers in the array.\n */\nvoid swap(int i, int j) \n{\n    int temp = array[i];\n    array[i] = array[j];\n    array[j] = temp;\n}\n\n/**\n * partition \n * Partitions the values between l and h.\n */\nint partition(int l, int h) \n{ \n    int x = array[h]; \n    int i = (l - 1); \n\n    for (int j = l; j <= h - 1; j++) \n    { \n        if (array[j] <= x) \n        { \n            i++; \n            swap(i, j); \n        } \n    } \n    swap(i + 1, h); \n\n    return (i + 1); \n} \n\n/**\n * quickSort \n * Performs the quick sort algorithm.\n */\nvoid quickSort(int low, int high)\n{\n    if (low < high) \n    {\n        int pi = partition(low, high);\n        \n        quickSort(low, pi - 1);\n        quickSort(pi + 1, high);\n    }\n}\n\n/**\n * print \n * Sorts and prints the contents of the array.\n */\nvoid print()\n{\n    quickSort(0, array.length - 1);\n\n    for (int i = 0; i < array.length; i++)\n    {\n        _println("array[", i, "] = ", i);\n    }\n}\n\nprint();` });
         }
         else
         {
@@ -394,8 +405,7 @@ class Editor
             monaco.editor.defineTheme("cscript", {
                 base: "vs",
                 inherit: true,
-                rules: [
-                ],
+                rules: [],
                 colors: {
                     "editorLineNumber.foreground": "#858585",
                     "editor.paddingTop": "10px",
@@ -416,11 +426,12 @@ class Editor
                 minimap: { enabled: false },
                 fixedOverflowWidgets: true
             });
-
+            
             this.editorConsole = new EditorConsole();    
             this.editorTabs = new EditorTabs(this);
-
+            
             this.editor.layout();
+            this.editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_S, () => {});
             this.editor.onDidChangeModelContent(() => this.onInput());
 
             this.editorTabs.load();
@@ -430,6 +441,7 @@ class Editor
     setText(text)
     {
         this.editor.setValue(text);
+        this.editor.setScrollPosition({ scrollTop: 0 });
     }
 
     setReadOnly(value)
