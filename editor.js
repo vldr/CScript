@@ -33,6 +33,8 @@ class EditorConsole
         this.consoleButtonStopIcon.style.display = "";
         this.consoleButtonStartIcon.style.display = "none";
 
+        this.executionStartTime = performance.now();
+        this.executionStopTime = 0;
         this.executionTime = 0;
         this.executionTimer = setInterval(() => this.onTimer(), 100);
 
@@ -69,8 +71,9 @@ class EditorConsole
 
         clearInterval(this.executionTimer);
         this.executionTimer = undefined;
+        this.executionTime = (performance.now() - this.executionStartTime) / 1000;
     
-        this.setStatus(`Press "Run" to start a program. <br><span>(Program ran for ${this.executionTime.toFixed(1)} seconds.)</span>`);
+        this.setStatus(`Press "Run" to start a program. <br><span>(Program ran for ${this.executionTime.toFixed(3)} seconds.)</span>`);
     }
 
     clear()
@@ -110,7 +113,7 @@ class EditorConsole
     onTimer() 
     {
         this.setStatus(`Program is running. (${this.executionTime.toFixed(1)} seconds)`);
-        this.executionTime += 0.1;
+        this.executionTime = (performance.now() - this.executionStartTime) / 1000;
     }
 
     onWorkerError()
