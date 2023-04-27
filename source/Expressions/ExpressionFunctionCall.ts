@@ -31,6 +31,7 @@ import InstructionPUSH from "../Instructions/InstructionPUSH";
 import InstructionSAVEPUSHA from "../Instructions/InstructionSAVEPUSHA";
 import InstructionSAVEPUSHB from "../Instructions/InstructionSAVEPUSHB";
 import InstructionSAVEFRONT from "../Instructions/InstructionSAVEFRONT";
+import ExternalWarnings from "../Errors/ExternalWarnings";
 
 export default class ExpressionFunctionCall extends Expression
 {
@@ -102,6 +103,10 @@ export default class ExpressionFunctionCall extends Expression
                 )
                 {
                     expressionResult.pushInstruction(new InstructionPUSH(variable));
+                }
+                else
+                {
+                    ExternalWarnings.STRUCT_OR_ARRAY_WONT_RECURSE(node, this._compiler, variable.name);
                 }
             }
         }

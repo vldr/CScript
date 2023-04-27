@@ -8,14 +8,14 @@ export default abstract class ExternalWarnings
     {
         compiler.addWarning(new CompilerMessage(
             messageId,
-            message,
+            messageId + ": " + message,
             node.location
         ));
     }
 
     static NOT_ALL_PATHS_RETURN(node: Node, compiler: Compiler)
     {
-        return this.generateWarning("C0001W",`Not all code paths return a value.`, node, compiler);
+        return this.generateWarning("C0001W", `Not all code paths return a value.`, node, compiler);
     }
 
     static STRUCT_OR_ARRAY_WONT_RECURSE(node: Node, compiler: Compiler, name: string)
