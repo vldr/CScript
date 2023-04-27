@@ -33,6 +33,7 @@
                 cursor: pointer;
                 border-radius: 21px;
                 padding: 5px 11px;
+                margin-top: 9px;
                 height: 22px;
                 margin-right: 6px;
             }
@@ -97,7 +98,13 @@
                 display: flex;
                 flex-direction: row;
                 width: 100%;
+                height: 100%;
                 overflow-x: hidden;
+                scrollbar-width: none;
+            }
+
+            #editor-tabs-list:hover {
+                overflow-x: auto;
             }
 
             #editor-tabs-buttons {
@@ -209,6 +216,7 @@
 
             ::-webkit-scrollbar {
                 width: 5px;
+                height: 4px;
             }
             
             ::-webkit-scrollbar-track {
@@ -217,9 +225,13 @@
             }
             
             ::-webkit-scrollbar-thumb {
-                -webkit-border-radius: 5px;
-                border-radius: 5px;
+                -webkit-border-radius: 10px;
+                border-radius: 10px;
                 background: rgba(0,0,0,0.2); 
+            }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: rgba(0,0,0,0.5); 
             }
         </style>
 	</head>

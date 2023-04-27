@@ -34,7 +34,6 @@ class EditorConsole
         this.consoleButtonStartIcon.style.display = "none";
 
         this.executionStartTime = performance.now();
-        this.executionStopTime = 0;
         this.executionTime = 0;
         this.executionTimer = setInterval(() => this.onTimer(), 100);
 
@@ -112,8 +111,8 @@ class EditorConsole
 
     onTimer() 
     {
-        this.setStatus(`Program is running. (${this.executionTime.toFixed(1)} seconds)`);
         this.executionTime = (performance.now() - this.executionStartTime) / 1000;
+        this.setStatus(`Program is running. (${this.executionTime.toFixed(1)} seconds)`);
     }
 
     onWorkerError()
@@ -177,6 +176,8 @@ class EditorTabs
         this.tabs = [];
 
         this.tabElements = document.getElementById("editor-tabs-list");
+        this.tabElements.onwheel = (event) => { event.preventDefault(); this.tabElements.scrollLeft += event.deltaY; };
+
         this.addTabButton = document.getElementById("editor-tabs-add-button");
         this.addTabButton.onclick = () => this.addTab();
     }
@@ -211,6 +212,8 @@ class EditorTabs
     {
         this.tabElements.innerHTML = "";
 
+        let activeTab;
+
         for (let index = 0; index < this.tabs.length; index++)
         {
             const tab = this.tabs[index];
@@ -237,9 +240,16 @@ class EditorTabs
 
                 tabElement.className += " editor-tab-active";
                 tabElement.appendChild(removeTabElement);
+
+                activeTab = tabElement;
             }
 
             this.tabElements.appendChild(tabElement);
+        }
+
+        if (activeTab)
+        {
+            activeTab.scrollIntoView();
         }
     }
 
