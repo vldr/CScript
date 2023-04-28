@@ -2,10 +2,10 @@ const path = require('path');
 
 module.exports = [
     {
-        entry: "./dist/source/Compiler.js",
+        entry: "./build/source/Compiler.js",
         mode: "production",
         output: {
-            path: path.resolve(__dirname, 'editor'),
+            path: path.resolve(__dirname, 'build/editor'),
             filename: 'compiler.js',
             library: {
                 name: 'Compiler',
@@ -15,10 +15,10 @@ module.exports = [
         },
     },
     {
-        entry: "./dist/source/Interpreter.js",
+        entry: "./build/source/Interpreter.js",
         mode: "production",
         output: {
-            path: path.resolve(__dirname, 'editor'),
+            path: path.resolve(__dirname, 'build/editor'),
             filename: 'interpreter.js',
             library: {
                 name: 'Interpreter',

@@ -4,7 +4,7 @@ const path = require("path");
 
 const INPUT_FILE_NAME = "parser/c15s.pegjs";
 
-const OUTPUT_FOLDER = "dist/parser/";
+const OUTPUT_FOLDER = "build/parser/";
 const OUTPUT_FILE_NAME = OUTPUT_FOLDER + "parser.js";
 
 const OUTPUT_FILE_NAME_2 = "parser/parser.js";
