@@ -7,7 +7,7 @@
   "license": "ISC",
   "scripts": {
     "test": "jest --verbose --silent=false",
-    "build": "tsc -p tsconfig.json && node tools/generateParser.js && webpack --config webpack.config.js && node tools/generateCompilerInterpreter.js"
+    "build": "tsc -p tsconfig.json && node tools/generateParser.js && webpack --config webpack.config.js && npx google-closure-compiler --js=build/editor/compiler.js --js_output_file=editor/compiler.js && npx google-closure-compiler --js=build/editor/interpreter.js --js_output_file=editor/interpreter.js"
   },
   "devDependencies": {
     "@types/jest": "^26.0.24",
